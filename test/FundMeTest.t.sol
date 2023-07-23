@@ -105,6 +105,37 @@ contract FundMeTest is Test {
         );
     }
 
+    function testWithdrawWithMultipleFundersCheaper() public funded {
+        // Arrange
+        uint160 numberOfFunders = 10;
+        uint160 startingFunderIndex = 0;
+        for (
+            uint160 funderIndex = startingFunderIndex;
+            funderIndex < numberOfFunders;
+            funderIndex++
+        ) {
+            hoax(address(funderIndex), 10 ether);
+            fundMe.fund{value: 10e18}();
+        }
+
+        uint256 startingOwnerBalance = fundMe.getOwner().balance;
+        uint256 startingFundMeBalance = address(fundMe).balance;
+
+        // Act
+        vm.prank(fundMe.getOwner());
+        fundMe.cheaperWithdraw();
+
+        // Assert
+        uint256 endingOwnerBalance = fundMe.getOwner().balance;
+        uint256 endingFundMeBalance = address(fundMe).balance;
+
+        assertEq(endingFundMeBalance, 0);
+        assertEq(
+            startingFundMeBalance + startingOwnerBalance,
+            endingOwnerBalance
+        );
+    }
+
     modifier funded() {
         vm.prank(USER); // Pretend to be USER
         fundMe.fund{value: 10e18}(); // Send 10 ETH
